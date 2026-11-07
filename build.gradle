@@ -1,0 +1,91 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.143'
+}
+
+group = mod_group_id
+version = mod_version
+
+base {
+    archivesName = "${mod_id}-neoforge${minecraft_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+neoForge {
+    version = project.neo_version
+
+    parchment {
+        minecraftVersion = project.parchment_minecraft_version
+        mappingsVersion = project.parchment_mappings_version
+    }
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+            programArgument '--nogui'
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
+// 优先使用 libs/ 下的本地 jar：把整合包 mods 文件夹里的 irons_spellbooks-*.jar 直接复制进来
+// 就能完全离线编译（1.21.1 的模组 jar 就是 Mojmap，不需要 remap）。没有本地 jar 时才走 maven。
+def localIronsSpellbooks = fileTree('libs') { include 'irons_spellbooks*.jar' }
+
+dependencies {
+    if (!localIronsSpellbooks.isEmpty()) {
+        logger.lifecycle("[cw_issponder_compat] 用本地 jar 编译: ${localIronsSpellbooks.files*.name}")
+        compileOnly localIronsSpellbooks
+    } else {
+        logger.lifecycle("[cw_issponder_compat] 从 Modrinth maven 解析 Iron's Spellbooks ${irons_spellbooks_version}")
+        compileOnly "maven.modrinth:irons-spells-n-spellbooks:${irons_spellbooks_version}"
+    }
+
+    // 想在本工程 runClient 里做冒烟测试（只装 Iron's，验证本模组能正常加载）时打开：
+    // localRuntime "maven.modrinth:irons-spells-n-spellbooks:${irons_spellbooks_version}"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version       : minecraft_version,
+            minecraft_version_range : minecraft_version_range,
+            neo_version_range       : neo_version_range,
+            loader_version_range    : loader_version_range,
+            mod_id                  : mod_id,
+            mod_name                : mod_name,
+            mod_license             : mod_license,
+            mod_version             : mod_version,
+            mod_authors             : mod_authors,
+            mod_description         : mod_description,
+            create_wizardry_version_range: create_wizardry_version_range,
+            iss_ponder_version_range: iss_ponder_version_range
+    ]
+
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

@@ -1,0 +1,21 @@
+# Build outputs
+build/
+.gradle/
+run/
+runs/
+
+# Local-only compile dependency (drop the modpack's Iron's Spellbooks jar here)
+libs/*.jar
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS / logs
+Thumbs.db
+desktop.ini
+*.log

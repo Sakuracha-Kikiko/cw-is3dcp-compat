@@ -1,0 +1,16 @@
+* text=auto
+
+# Shell scripts must keep LF even on Windows
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows batch files keep CRLF
+*.bat text eol=crlf
+
+# Binaries
+*.jar binary
+*.png binary
+*.zip binary
+
+# Language-specific settings
+*.ps1 linguist-detectable=false
